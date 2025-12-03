@@ -1,5 +1,5 @@
 /* ======================================================
-   game.js (스낵 몰래 먹기 + Hard 마이크 + eduMusic 랜덤 재생)
+   game.js (반응형 적용 + Hard 마이크 + eduMusic 랜덤 재생)
 ====================================================== */
 
 let teacherFacing = true;
@@ -23,21 +23,20 @@ let imgNormal, imgEat, imgEating, imgEatFind;
 let imgCookie;
 let heartFull, heartBroken;
 
-let eduMusic;             // ★ 게임 내부 음악
+let eduMusic;
 let eduMusicStartOffset = 0;
 
 /* -----------------------------------------
-   HARD MODE MIC
+   반응형 스케일 설정
 ----------------------------------------- */
-// let mic = null;
-// let micLevel = 0;
-// let micThreshold = 0.005;
+function Sx(v) { return v * (width / 900); }
+function Sy(v) { return v * (height / 600); }
+function Sr(v) { return v * ((width + height) / 1400); } // radius scaling
 
 /* -----------------------------------------
    LOAD IMAGES + eduMusic
 ----------------------------------------- */
 function loadGameImages() {
-
   backgroundDown = loadImage("image/background_down.png");
   backgroundUp   = loadImage("image/background_up.png");
 
@@ -56,8 +55,9 @@ function loadGameImages() {
   heartFull = loadImage("image/full_heart.png");
   heartBroken = loadImage("image/broken_heart.png");
 
-  // ★ 게임 배경 음악
-  eduMusic = loadSound("image/edu.mp3");
+  eduMusic = loadSound("image/edu.mp3", () => {
+    eduMusic.setVolume(0.2);
+  });
 }
 
 let currentBackground = "down";
@@ -66,7 +66,6 @@ let currentBackground = "down";
    INIT GAME
 ----------------------------------------- */
 function initSnackGame() {
-
   teacherFacing = true;
   snackProgress = 0;
   cookieVisible = false;
@@ -82,18 +81,7 @@ function initSnackGame() {
   startTime = millis();
   lastScoreTime = millis();
 
-  // ★ Hard 모드: 마이크 활성화
-  if (gameDifficulty === "hard") {
-    mic = new p5.AudioIn();
-    mic.start();
-  } else {
-    mic = null;
-  }
-
-  // ★ 매판 랜덤 시작 위치 (0~10초)
   eduMusicStartOffset = random(0, 10);
-
-  // ★ 기존 재생 중이면 정지
   if (eduMusic && eduMusic.isPlaying()) eduMusic.stop();
 
   scheduleNextTurn();
@@ -103,7 +91,6 @@ function initSnackGame() {
    TURNING SCHEDULER
 ----------------------------------------- */
 function scheduleNextTurn() {
-
   let interval = random(3000, 4000);
 
   setTimeout(() => {
@@ -119,31 +106,26 @@ function scheduleNextTurn() {
       teacherFacing = nextFacing;
       turning = false;
 
-      // ★ 걸림 처리
       if (!before && teacherFacing && cookieVisible) {
-
         health--;
         cookieVisible = false;
         currentBackground = "down";
         forceFrontFeel = true;
 
-        // ★ 걸리면 음악 멈춤
-        if (eduMusic && eduMusic.isPlaying()) {
-          eduMusic.pause();
-        }
+        if (eduMusic && eduMusic.isPlaying()) eduMusic.pause();
 
         setTimeout(() => {
           forceFrontFeel = false;
 
-          // ★ 다시 음악 재생
-          if (eduMusic && !eduMusic.isPlaying()) {
-            eduMusic.play();
-          }
-
           if (health <= 0) {
             score = snackProgress;
             gameState = "gameover";
+            if (eduMusic && eduMusic.isPlaying()) eduMusic.stop();
+            return;
           }
+
+          if (!eduMusic.isPlaying()) eduMusic.play();
+
         }, 1500);
       }
 
@@ -158,22 +140,21 @@ function scheduleNextTurn() {
    DRAW GAME
 ----------------------------------------- */
 function drawSnackGame() {
-
-  // ★ 게임 음악 자동 재생 + 랜덤 구간 jump
-  if (eduMusic && !eduMusic.isPlaying() && !forceFrontFeel) {
+  if (eduMusic && !eduMusic.isPlaying() && !forceFrontFeel && gameState === "playing") {
     eduMusic.play();
     eduMusic.jump(eduMusicStartOffset);
   }
 
-  // ★ Hard 모드 마이크 먹기 판정
-  if (gameDifficulty === "hard" && mic) {
+  if (gameDifficulty === "hard" && typeof mic !== "undefined") {
     micLevel = mic.getLevel();
     isPressed = micLevel > micThreshold;
   }
 
-  // 배경
-  if (currentBackground === "up") image(backgroundUp, 0, 0, width, height);
-  else image(backgroundDown, 0, 0, width, height);
+  // 배경 반응형
+  image(
+    currentBackground === "up" ? backgroundUp : backgroundDown,
+    0, 0, width, height
+  );
 
   let elapsed = millis() - startTime;
   let remaining = max(0, gameDuration - elapsed);
@@ -181,16 +162,17 @@ function drawSnackGame() {
   if (remaining <= 0) {
     score = snackProgress;
     gameState = "timeout";
+    if (eduMusic && eduMusic.isPlaying()) eduMusic.stop();
     return;
   }
 
-  /* TIMER UI ==================================================== */
-  let tX = width - 90;
-  let tY = 70;
-  let tR = 35;
+  /* TIMER UI -------------------------------------------------- */
+  let tX = Sx(710);
+  let tY = Sy(60);
+  let tR = Sr(35);
 
   fill(255);
-  ellipse(tX, tY, tR*2);
+  ellipse(tX, tY, tR * 2);
 
   fill(255, 80, 80);
   let startAngle = -HALF_PI;
@@ -199,80 +181,85 @@ function drawSnackGame() {
 
   noFill();
   stroke(100);
-  strokeWeight(3);
-  ellipse(tX, tY, tR*2);
+  strokeWeight(Sr(3));
+  ellipse(tX, tY, tR * 2);
 
   noStroke();
   fill(0);
   textAlign(CENTER, CENTER);
-  textSize(20);
-  text(`점수: ${snackProgress}`, tX, tY+50);
+  textSize(Sr(18));
+  text(`점수: ${snackProgress}`, tX, tY + Sy(40));
 
-  /* HEART ====================================================== */
-  let heartsY = tY + 80;
-  let heartSize = 26;
-  let startX = tX - 40;
+  /* HEART UI -------------------------------------------------- */
+  let heartsY = tY + Sy(60);
+  let heartSize = Sr(26);
+  let startX = tX - Sx(40);
+
   for (let i = 0; i < 3; i++) {
     let img = i < health ? heartFull : heartBroken;
-    image(img, startX + i*35, heartsY, heartSize, heartSize);
+    image(img, startX + Sx(i * 35), heartsY, heartSize, heartSize);
   }
 
-  /* TEACHER ===================================================== */
+  /* TEACHER -------------------------------------------------- */
   let imgToShow = imgFront;
   if (forceFrontFeel) imgToShow = imgFrontFeel;
   else if (turning && nextFacing) imgToShow = imgBackFeel;
   else if (!teacherFacing) imgToShow = imgBack;
 
-  image(imgToShow, width/1.75 - 100, height/3.5, 200, 200);
+  image(imgToShow, Sx(420), Sy(160), Sx(200), Sy(200));
 
-  /* PLAYER ====================================================== */
-  let cx = width/1.25;
-  let cy = height/1.5;
-  let r = 100;
+  /* PLAYER -------------------------------------------------- */
+  let cx = Sx(650);
+  let cy = Sy(450);
+  let r = Sr(100);
 
   let playerImg;
   if (forceFrontFeel) playerImg = imgEatFind;
   else if (isPressed && cookieVisible && !teacherFacing && !turning) {
-    if (millis() - lastScoreTime < 150) playerImg = imgEating;
-    else playerImg = imgEat;
+    playerImg = (millis() - lastScoreTime < 150) ? imgEating : imgEat;
+  } else {
+    playerImg = imgNormal;
   }
-  else playerImg = imgNormal;
 
-  fill(255,255,255,230);
+  fill(255, 255, 255, 230);
   noStroke();
-  ellipse(cx, cy, r*2);
+  ellipse(cx, cy-60, r * 2);
 
   drawingContext.save();
   drawingContext.beginPath();
-  drawingContext.arc(cx, cy, r, 0, TWO_PI);
+  drawingContext.arc(cx, cy-60, r, 0, TWO_PI);
   drawingContext.clip();
 
-  image(playerImg, cx-r+15, cy-r+15, r*2.1, r*2.1);
+  image(playerImg, cx - r + Sx(15), cy - r + Sy(-20), r * 2.1, r * 2.1);
 
   if (cookieVisible) {
-    image(imgCookie, cx*1.05, cy - 20, 40, 40);
+    push();
+    translate(cx + Sx(20) + Sr(30), cy - Sy(35) + Sr(30)); // 중심 기준 이동
+    rotate(radians(-160)); // -160도 회전
+    imageMode(CENTER);
+    image(imgCookie, 0, 0, Sr(60), Sr(60));
+    pop();
   }
+
 
   drawingContext.restore();
 
   stroke(0);
   noFill();
-  strokeWeight(2);
-  ellipse(cx, cy, r*2);
+  strokeWeight(Sr(2));
+  ellipse(cx, cy-60, r * 2);
 
-  /* SCORING ===================================================== */
+  /* SCORING -------------------------------------------------- */
   if (isPressed && cookieVisible) {
-
     if (teacherFacing && !turning) {
       score = snackProgress;
       gameState = "gameover";
+      if (eduMusic && eduMusic.isPlaying()) eduMusic.stop();
       return;
     }
 
-    if (!teacherFacing && !turning && millis()-lastScoreTime >= 200) {
-      // ★ 테스트용: 한 번 먹을 때마다 10점씩 증가
-      //   (필요하면 1 / 5점 등으로 다시 조정 가능)
-      snackProgress += 10;
+    if (!teacherFacing && !turning && millis() - lastScoreTime >= 200) {
+      snackProgress += (gameDifficulty === 'hard' ? 4 : 2);
       lastScoreTime = millis();
 
       if (snackProgress >= 100) {
@@ -281,20 +268,12 @@ function drawSnackGame() {
       }
     }
   }
-  // ★ 게임 종료 즉시 eduMusic 정지
-  if (gameState === "success" || gameState === "gameover" || gameState === "timeout") {
-    if (eduMusic && eduMusic.isPlaying()) {
-        eduMusic.stop();
-    }
-  }
-
 }
 
 /* -----------------------------------------
    KEY INPUT
 ----------------------------------------- */
 function snackGameKeyPressed(keyCode) {
-
   if (gameDifficulty === "easy") {
     if (key === " ") isPressed = true;
   }
@@ -320,5 +299,7 @@ function snackGameKeyReleased(keyCode) {
   }
 }
 
-function updateSnackGame() { }
-
+/* -----------------------------------------
+   UPDATE GAME
+----------------------------------------- */
+function updateSnackGame() {}
