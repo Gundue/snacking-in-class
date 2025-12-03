@@ -29,9 +29,9 @@ let eduMusicStartOffset = 0;
 /* -----------------------------------------
    HARD MODE MIC
 ----------------------------------------- */
-let mic = null;
-let micLevel = 0;
-let micThreshold = 0.005;
+// let mic = null;
+// let micLevel = 0;
+// let micThreshold = 0.005;
 
 /* -----------------------------------------
    LOAD IMAGES + eduMusic
@@ -321,3 +321,4 @@ function snackGameKeyReleased(keyCode) {
 }
 
 function updateSnackGame() { }
+
