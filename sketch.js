@@ -4,7 +4,7 @@
 ====================================================== */
 
 let gameState = 'start';
-let score = 2;
+let score = 0;
 let gameDifficulty = 'easy';
 let currentRuleIndex = 0;
 
