@@ -30,6 +30,7 @@ let successMotion2;
 
 let bgMusic;
 let rule1, rule2, rule3, rule4;
+let dmLogo;
 let nextButton, startFromRuleButton;
 
 // ---- 엔딩 크레딧 스크롤용 변수 ----
@@ -88,6 +89,8 @@ function preload() {
   rule3 = loadImage('image/rule3.png');
   rule4 = loadImage('image/rule4.png');
 
+  dmLogo = loadImage('image/dm_logo.png');
+
   loadGameImages(); // game.js
 }
 
@@ -95,7 +98,7 @@ function preload() {
    SETUP
 ----------------------------------------- */
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  createCanvas(windowWidth-20, windowHeight-22);
   mic = new p5.AudioIn();
   mic.start();
   createButtons();
@@ -144,6 +147,8 @@ function draw() {
   if (gameState === 'playing') {
     drawMicUI();
   }
+
+  drawDMLogo();
 }
 
 /* -----------------------------------------
@@ -157,13 +162,13 @@ function createButtons() {
   startButton = { 
     x: width - 150 * scaleX, 
     y: height - 100 * scaleY, 
-    size: 80 * S, 
+    size: 100 * S,
     text: '게임시작' 
   };
   rulesButton = { 
     x: width - 150 * scaleX, 
     y: height - 200 * scaleY, 
-    size: 80 * S, 
+    size: 100 * S, 
     text: '게임방법' 
   };
 
@@ -197,13 +202,13 @@ function createButtons() {
 function drawStartScreen() {
   image(bgImage, 0, 0, width, height);
 
-  let Lscale = width / 800;
+  let Lscale = 2;
   if (logoImage) {
     imageMode(CENTER);
     image(
       logoImage,
       width/2,
-      height*0.18,
+      height*0.3,
       logoImage.width * 0.12 * Lscale,
       logoImage.height * 0.12 * Lscale
     );
@@ -223,9 +228,9 @@ function drawAnimatedCharacter(x, y) {
   let idx = Math.floor((frameCount / 60) % 3);
   let img = idx === 0 ? motion1 : idx === 1 ? motion2 : motion3;
 
-  let s = width / 800;  // 비율
+  let s = 2;  // 비율
   imageMode(CENTER);
-  image(img, x, y, img.width * 0.8 * s, img.height * 0.8 * s);
+  image(img, x, y * 1.1, img.width * 0.7 * s, img.height * 0.7 * s);
   imageMode(CORNER);
 }
 
@@ -557,6 +562,16 @@ function updateMicThresholdByMouse(mx) {
    INPUT
 ----------------------------------------- */
 function mousePressed() {
+
+  if (dmLogo && dmLogo._pos) {
+    let p = dmLogo._pos;
+    if (mouseX >= p.x && mouseX <= p.x + p.w &&
+        mouseY >= p.y && mouseY <= p.y + p.h) {
+      window.open("https://mediamba.ssu.ac.kr/", "_blank");
+      return;
+    }
+  }
+
   if (isMouseOnMicSlider(mouseX, mouseY)) {
     micSliderCfg.dragging = true;
     updateMicThresholdByMouse(mouseX);
@@ -682,4 +697,18 @@ function isInsideBtn(px,py,btn) {
          px < btn.x + btn.width/2 &&
          py > btn.y - btn.height/2 &&
          py < btn.y + btn.height/2;
+}
+
+function drawDMLogo() {
+  let w = dmLogo.width * 1.1;
+  let h = dmLogo.height * 1.1;
+
+  let x = 10;
+  let y = 10;
+
+  imageMode(CORNER);
+  image(dmLogo, x, y, w, h);
+
+  // 클릭 영역 저장
+  dmLogo._pos = {x, y, w, h};
 }
