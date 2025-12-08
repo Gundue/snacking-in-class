@@ -10,6 +10,7 @@ let currentRuleIndex = 0;
 
 let startButton, rulesButton, easyButton, hardButton, restartButton;
 let successRestartButton;
+let creditsRestartButton;
 let hoveredButton = null;
 
 let bgImage;
@@ -191,9 +192,16 @@ function createButtons() {
     x: width - 160 * scaleX,
     y: height - 120 * scaleY,
     size: 90 * S,
-    text:'다시시작'
+    text:'다음'
   };
   successRestartButton = { ...restartButton };
+  
+  creditsRestartButton = {
+    x: width - 150 * scaleX,
+    y: height - 100 * scaleY,
+    size: 100 * S,
+    text: '다시 시작'
+  };
 }
 
 /* -----------------------------------------
@@ -285,6 +293,40 @@ function drawCookieButton(btn, hover) {
   noStroke();
   textAlign(CENTER, CENTER);
   textSize(18 * (width/800));
+  text(btn.text, 0, 0);
+
+  pop();
+}
+
+/* -----------------------------------------
+   SQUARE BUTTON (사각형 버튼)
+----------------------------------------- */
+function drawSquareButton(btn, hover) {
+  push();
+  translate(btn.x, btn.y);
+
+  if (hover) {
+    translate(0, -2);
+  }
+
+  let w = btn.width;
+  let h = btn.height;
+  
+  // 사각형 배경
+  fill(100, 150, 200);
+  if (hover) {
+    fill(120, 170, 220);
+  }
+  stroke(255);
+  strokeWeight(2);
+  rectMode(CENTER);
+  rect(0, 0, w, h, 8);
+  
+  // 텍스트
+  fill(255);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(16 * (width/800));
   text(btn.text, 0, 0);
 
   pop();
@@ -477,6 +519,9 @@ function drawCreditsScreen() {
   fill(0);
   textAlign(CENTER, TOP);
 
+  // 크레딧 화면 오른쪽 하단에 쿠키 버튼 추가
+  drawCookieButton(creditsRestartButton, hoveredButton === 'creditsRestart');
+
   // 다른 화면에 영향이 가지 않도록 부드러운 렌더링 복원
   smooth();
 }
@@ -619,8 +664,9 @@ function mousePressed() {
   }
 
   else if (gameState === 'credits') {
-    // 크레딧 화면 아무 곳이나 클릭 시 시작 화면으로 복귀
-    gameState = 'start';
+    if (dist(mouseX, mouseY, creditsRestartButton.x, creditsRestartButton.y) < creditsRestartButton.size/2) {
+      gameState = 'start';
+    }
   }
 }
 
@@ -662,6 +708,10 @@ function mouseMoved() {
     if (dist(mouseX,mouseY,successRestartButton.x,successRestartButton.y) < successRestartButton.size/2)
       hoveredButton='restart';
   }
+  else if (gameState === 'credits') {
+    if (dist(mouseX, mouseY, creditsRestartButton.x, creditsRestartButton.y) < creditsRestartButton.size/2)
+      hoveredButton='creditsRestart';
+  }
 }
 
 /* -----------------------------------------
@@ -675,11 +725,35 @@ function keyReleased() {
   if (gameState === 'playing') snackGameKeyReleased(keyCode);
 }
 
-// 크레딧 화면에서 스페이스바 입력 처리
+// 크레딧 화면에서 스페이스바 입력 처리 + 개발용 단축키
 function keyTyped() {
   if (gameState === 'credits' && key === ' ') {
     gameState = 'start';
     return false;
+  }
+  
+  // 개발용 단축키 (테스트용) - 게임 중에만 작동
+  if (gameState === 'playing') {
+    if (key === 's' || key === 'S') {
+      // 's' 키: 바로 성공 화면으로
+      score = 10;
+      snackProgress = 10;
+      gameState = 'success';
+      if (typeof eduMusic !== 'undefined' && eduMusic && eduMusic.isPlaying()) eduMusic.stop();
+      return false;
+    } else if (key === 'f' || key === 'F') {
+      // 'f' 키: 바로 실패 화면으로
+      score = snackProgress;
+      gameState = 'gameover';
+      if (typeof eduMusic !== 'undefined' && eduMusic && eduMusic.isPlaying()) eduMusic.stop();
+      return false;
+    } else if (key === 't' || key === 'T') {
+      // 't' 키: 바로 타임아웃 화면으로
+      score = snackProgress;
+      gameState = 'timeout';
+      if (typeof eduMusic !== 'undefined' && eduMusic && eduMusic.isPlaying()) eduMusic.stop();
+      return false;
+    }
   }
 }
 
