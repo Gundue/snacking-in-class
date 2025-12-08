@@ -36,7 +36,7 @@ let nextButton, startFromRuleButton;
 
 // ---- 엔딩 크레딧 스크롤용 변수 ----
 let creditsScrollY = 0;
-let creditsScrollSpeed = 0.8; // 숫자를 키우면 더 빨리 올라감
+let creditsScrollSpeed = 2.0; // 숫자를 키우면 더 빨리 올라감
 let creditsFinished = false;  // 끝까지 올라가면 스크롤 멈춤
 let aiUsageRate = '70%';      // AI 사용 비율 (필요시 수정)
 
