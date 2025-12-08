@@ -307,8 +307,7 @@ function drawGameOver() {
   fill(255);
   text(`점수: ${score}`, width/2, height*0.75);
 
-  textSize(30*s);
-  text('스페이스바를 눌러 다시 시작', width/2, height*0.82);
+  drawCookieButton(restartButton, hoveredButton === 'restart');
 }
 
 /* -----------------------------------------
@@ -328,8 +327,7 @@ function drawTimeout() {
   fill(255);
   text(`점수: ${score}`, width/2, height*0.55);
 
-  textSize(25 * (width/800));
-  text('스페이스바로 다시 시작', width/2, height*0.62);
+  drawCookieButton(restartButton, hoveredButton === 'restart');
 }
 
 /* -----------------------------------------
@@ -604,8 +602,12 @@ function mousePressed() {
   }
 
   else if (['gameover','timeout'].includes(gameState)) {
-    if (dist(mouseX, mouseY, restartButton.x, restartButton.y) < restartButton.size/2)
-      gameState='selectDifficulty';
+    if (dist(mouseX, mouseY, restartButton.x, restartButton.y) < restartButton.size/2) {
+      // 크레딧 시작 시 스크롤 상태 초기화
+      gameState = 'credits';
+      creditsScrollY = -200; // 텍스트가 더 위에서 시작하도록 설정
+      creditsFinished = false;
+    }
   }
   else if (gameState === 'success') {
     if (dist(mouseX, mouseY, successRestartButton.x, successRestartButton.y) < successRestartButton.size/2) {
@@ -667,8 +669,6 @@ function mouseMoved() {
 ----------------------------------------- */
 function keyPressed() {
   if (gameState === 'playing') snackGameKeyPressed(keyCode);
-  if (['gameover','timeout','success'].includes(gameState) && key === ' ')
-    gameState='selectDifficulty';
 }
 
 function keyReleased() {
