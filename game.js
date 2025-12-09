@@ -263,6 +263,7 @@ function drawSnackGame() {
       lastScoreTime = millis();
 
       if (snackProgress >= 100) {
+        eduMusic.stop();
         score = snackProgress;
         gameState = "success";
       }
